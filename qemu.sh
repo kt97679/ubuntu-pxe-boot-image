@@ -17,7 +17,7 @@ get_free_port() {
 }
 
 kill_qemu() {
-    pkill ${1:-} -f "tcp:127.0.0.1:$(grep -oP "Port\s+\K\d+" $ssh_config)-"
+    pkill ${1:-} -f "tcp:127.0.0.1:$(grep -oP "Port\s+\K\d+" $ssh_config 2>/dev/null)-"
 }
 
 start() {
