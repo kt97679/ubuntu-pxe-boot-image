@@ -11,7 +11,7 @@ OUTPUT_DIR="$SCRIPT_DIR/output"
 [ -r /.dockerenv ] || {
     mkdir -p $OUTPUT_DIR
     exec &> >(tee $OUTPUT_DIR/$(basename $0).log)
-    exec docker run -u root --entrypoint=$BUILD_DIR/$(basename $0) --rm -v $SCRIPT_DIR:$BUILD_DIR public.ecr.aws/lts/ubuntu:$UBUNTU_VERSION
+    exec docker run -u root --entrypoint=$BUILD_DIR/$(basename $0) --rm -v $SCRIPT_DIR:$BUILD_DIR ubuntu:$UBUNTU_VERSION
 }
 
 mkdir -p "$IMAGE_ROOT" && cd "$IMAGE_ROOT"
