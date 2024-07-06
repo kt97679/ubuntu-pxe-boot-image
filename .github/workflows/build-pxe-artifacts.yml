@@ -20,14 +20,15 @@ jobs:
       uses: actions/github-script@v6
       with:
         script: |
-          const { data: releases } = await github.repos.listReleases({
+          const latestRelease = await github.rest.repos.listReleases({
             owner: context.repo.owner,
             repo: context.repo.repo
-          });
-          const latestRelease = releases.find(release => !release.draft);
+          }).then(({ data }) => data.find(release => !release.draft));
+
           if (!latestRelease) {
             throw new Error('No published release found.');
           }
+
           const tagName = latestRelease.tag_name;
 
           core.setOutput('tag_name', tagName);
