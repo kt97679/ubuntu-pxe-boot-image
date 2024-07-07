@@ -37,3 +37,22 @@ Note: By default, the root password is not set. If console access is needed, unc
 ## Stopping the VM
 
 To stop the VM, use `./qemu.sh stop`.
+
+# VM provisioning
+
+Using PXE boot artifacts you can provision vm that will boot from disk:
+
+```
+# create disk
+qemu-img create -f qcow2 /var/tmp/myimage.qcow2 16G
+# pxe boot vm with new disk attached
+QEMU_OPTS="-drive file=/var/tmp/myimage.qcow2" ./qemu.sh start
+# provision new vm via ssh
+./vm-debootstrap-ubuntu.sh |./qemu.sh ssh
+# stop vm
+./qemu.sh stop
+# now you can boot new vm
+qemu-system-x86_64 -drive file=/var/tmp/myimage.qcow2 -device virtio-net-pci,netdev=n1 -netdev user,id=n1,hostfwd=tcp:127.0.0.1:2222-:22 -nographic -enable-kvm -cpu max -m 4096
+# and connect to it via ssh
+ssh -p 2222 127.0.0.1
+```

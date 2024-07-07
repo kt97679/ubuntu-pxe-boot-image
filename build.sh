@@ -19,7 +19,8 @@ mkdir -p "$IMAGE_ROOT" && cd "$IMAGE_ROOT"
 . /etc/os-release
 apt-get update && apt-get install --no-install-recommends -y squashfs-tools debootstrap
 debootstrap --arch amd64 --variant=minbase --components=main,restricted,universe --include=live-boot,systemd-sysv,openssh-server,linux-image-virtual,curl ${UBUNTU_CODENAME} .
-cp /etc/apt/sources.list ./etc/apt/sources.list
+printf "deb http://archive.ubuntu.com/ubuntu/ %s main restricted universe multiverse\n" \
+    $UBUNTU_CODENAME{,-backports,-updates,-security} > ./etc/apt/sources.list
 mkdir -p /etc/systemd/{network,system}
 cat > ./etc/systemd/network/80-dhcp.network <<NETWORK
 [Match]
