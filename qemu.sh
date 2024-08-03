@@ -38,7 +38,7 @@ start() {
     done
     printf "%s\n" \
         "#!ipxe" \
-        "kernel $vmlinuz dhcp boot=live fetch=$squashfs nomodeset console=ttyS0,115200n8 rootsize=10% $http_hook" \
+        "kernel $vmlinuz dhcp boot=live fetch=$squashfs nomodeset console=ttyS0,115200n8 $http_hook" \
         "initrd $initrd" \
         "boot" >boot.ipxe
     python3 -m http.server $http_port --bind 127.0.0.1 &> http.log &
