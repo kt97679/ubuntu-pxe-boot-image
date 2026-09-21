@@ -3,7 +3,7 @@
 set -ue -o pipefail
 
 output_dir="$(dirname $(realpath $0))/output"
-wait_seconds=180
+wait_seconds=${WAIT_SECONDS:-180}
 ssh_config=$output_dir/ssh_config
 
 run_ssh() {
@@ -54,13 +54,19 @@ start() {
         "  StrictHostKeyChecking no" \
         "  PasswordAuthentication no" \
         "  LogLevel FATAL" > $ssh_config
+    if [ -n "${iso:-}" ]; then
+        # no http_hook on ISO boot: hand the ssh key to systemd via an SMBIOS credential (systemd >= 252)
+        boot_opts="-cdrom $iso -smbios type=11,value=io.systemd.credential.binary:ssh.authorized_keys.root=$(base64 -w0 ssh-key.pub)"
+    else
+        boot_opts="-boot n"
+    fi
     qemu_cmd="qemu-system-x86_64 ${QEMU_OPTS:-} \
-        -boot n \
+        $boot_opts \
         -device virtio-net-pci,netdev=n1 \
         -netdev user,id=n1,tftp=${output_dir},bootfile=/boot.ipxe,hostfwd=tcp:127.0.0.1:${ssh_port}-:22,domainname=$(hostname -d|grep .||echo unknown) \
         -nographic \
-	$([ -r /dev/kvm ] && echo -enable-kvm -cpu max) \
-        -m 4096"
+	$([ -r /dev/kvm ] && echo -enable-kvm -cpu max || true) \
+        -m ${QEMU_MEM:-4096}"
     ${console:-false} && {
         eval "$qemu_cmd |& tee qemu.log"
         exit
@@ -78,5 +84,7 @@ case ${1:-} in
     stop) kill_qemu || true ;;
     ssh) shift && run_ssh "$@" ;;
     console) console=true start ;;
-    *) echo "Usage: $0 start|stop|ssh|console" ;;
+    start-iso) iso=$(ls "$output_dir"/*.iso | tail -1) start ;;
+    console-iso) iso=$(ls "$output_dir"/*.iso | tail -1) console=true start ;;
+    *) echo "Usage: $0 start|start-iso|stop|ssh|console|console-iso" ;;
 esac

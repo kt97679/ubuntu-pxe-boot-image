@@ -10,7 +10,7 @@ To obtain the artifacts, you have two options:
 
 ### Build Locally
 
-Clone this repository and run the `./build.sh [ubuntu_version]` script. This script creates an `output` directory and places the kernel, initrd, and root file system there. Docker must be installed for this process.
+Clone this repository and run the `./build.sh [ubuntu_version]` script. This script creates an `output` directory and places the kernel, initrd, root file system and a bootable ISO (`ubuntu-<version>-live.iso`) there. Docker must be installed for this process.
 
 Replace `[ubuntu_version]` with the optional Ubuntu version parameter. Omitting this parameter builds the latest version of Ubuntu.
 
@@ -37,6 +37,33 @@ Note: By default, the root password is not set. If console access is needed, unc
 ## Stopping the VM
 
 To stop the VM, use `./qemu.sh stop`.
+
+# ISO image
+
+The build also produces a hybrid ISO containing the same kernel, initrd and root file system. It boots:
+
+- in BIOS and UEFI mode,
+- with UEFI Secure Boot enabled (it uses Ubuntu's signed shim and GRUB),
+- from a CD/DVD or from a USB stick (`sudo dd if=output/ubuntu-24.04-live.iso of=/dev/sdX bs=4M conv=fsync`).
+
+The ISO kernel command line contains `autologin`, so the console (both the serial port and tty1) logs
+straight into a root shell, with no password prompt. Anyone with physical or console access to a machine
+booted from this ISO therefore gets root; drop `autologin` from `grub.cfg` in `build.sh` if that is not wanted.
+The same flag works for PXE boots: add `autologin` to the kernel command line in your iPXE/GRUB config.
+
+No ssh key or root password is set on the ISO, since there is no `http_hook`. For remote access you can:
+
+- press `e` in the GRUB menu and append `http_hook=http://<server>/<script>.sh` to the `linux` line,
+- on Ubuntu 24.04+ (systemd >= 252) pass the key as a systemd credential, e.g. for QEMU:
+  `-smbios type=11,value=io.systemd.credential.binary:ssh.authorized_keys.root=$(base64 -w0 key.pub)`,
+- uncomment the line in `build.sh` that sets the root password and rebuild.
+
+## Testing the ISO with QEMU
+
+`./qemu.sh start-iso` boots the ISO as a CD-ROM and injects the ssh key via the SMBIOS credential above,
+after that `./qemu.sh ssh` and `./qemu.sh stop` work as usual. `./qemu.sh console-iso` boots it in the foreground.
+
+`QEMU_MEM` (default 4096) and `WAIT_SECONDS` (default 180) can be used to adjust VM memory and the boot timeout.
 
 # VM provisioning
 
